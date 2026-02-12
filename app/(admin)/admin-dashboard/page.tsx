@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { StatsGrid } from "@/components/ui/stat-card";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -203,19 +202,6 @@ const columns: Column<ClubRow>[] = [
       </span>
     ),
   },
-  {
-    key: "actions",
-    label: "",
-    render: (club) => (
-      <Link
-        href={`/manage-clubs/${club.initials.toLowerCase()}`}
-        className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors no-underline"
-        onClick={(e) => e.stopPropagation()}
-      >
-        View
-      </Link>
-    ),
-  },
 ];
 
 const ExportIcon = (
@@ -249,7 +235,12 @@ export default function AdminDashboard() {
           }
         />
         <FilterBar filters={filterConfig} searchPlaceholder="Search clubs..." />
-        <DataTable columns={columns} data={clubs} rowKey={(club) => club.initials} />
+        <DataTable
+          columns={columns}
+          data={clubs}
+          rowKey={(club) => club.initials}
+          rowHref={(club) => `/manage-clubs/${club.initials.toLowerCase()}`}
+        />
         <Pagination currentPage={1} totalPages={8} totalItems={47} itemsPerPage={6} />
       </Card>
     </div>

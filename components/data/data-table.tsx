@@ -1,10 +1,13 @@
 /**
  * DataTable - generic table wrapper with responsive horizontal scroll
  * Handles: column definitions, sorting indicators, row rendering
+ * Supports: clickable rows via rowHref (navigates using Next.js router)
  * Used on: Dashboard, Grant-Clubs, Invoices
  */
 
 "use client";
+
+import { useRouter } from "next/navigation";
 
 export interface Column<T> {
   key: string;
@@ -18,6 +21,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   rowKey: (row: T) => string;
+  rowHref?: (row: T) => string;
   onRowClick?: (row: T) => void;
   onSort?: (key: string) => void;
   sortKey?: string;
@@ -29,12 +33,25 @@ export function DataTable<T>({
   columns,
   data,
   rowKey,
+  rowHref,
   onRowClick,
   onSort,
   sortKey,
   sortDir,
   minWidth = "800px",
 }: DataTableProps<T>) {
+  const router = useRouter();
+
+  const handleRowClick = (row: T) => {
+    if (rowHref) {
+      router.push(rowHref(row));
+    } else if (onRowClick) {
+      onRowClick(row);
+    }
+  };
+
+  const isClickable = !!rowHref || !!onRowClick;
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full" style={{ minWidth }}>
@@ -85,9 +102,9 @@ export function DataTable<T>({
               <tr
                 key={rowKey(row)}
                 className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-                  onRowClick ? "cursor-pointer" : ""
+                  isClickable ? "cursor-pointer" : ""
                 }`}
-                onClick={() => onRowClick?.(row)}
+                onClick={() => handleRowClick(row)}
               >
                 {columns.map((col) => (
                   <td key={col.key} className={`px-4 md:px-6 py-4 ${col.className || ""}`}>
