@@ -190,6 +190,13 @@ export default function ClubProfileView() {
     </svg>
   );
 
+  const InvoicesIcon = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+
   const FilesIcon = (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -222,6 +229,9 @@ export default function ClubProfileView() {
             <div className="flex gap-3">
               <Link href={`/manage-clubs/rs/edit`} className="no-underline">
                 <Button icon={EditIcon}>Edit Club Details</Button>
+              </Link>
+              <Link href="/manage-clubs/rs/invoices" className="no-underline">
+                <Button icon={InvoicesIcon}>Invoices</Button>
               </Link>
               <Button icon={FilesIcon}>Files</Button>
             </div>
