@@ -1,3 +1,7 @@
+"use client";
+
+import { ClubHeader } from "@/components/layout/club-header";
+
 export default function ClubLayout({
   children,
 }: {
@@ -5,8 +9,8 @@ export default function ClubLayout({
 }) {
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* TODO: Club header/nav will go here */}
-      <main>{children}</main>
+      <ClubHeader />
+      <main className="max-w-[1400px] mx-auto p-4 md:p-8">{children}</main>
     </div>
   );
 }
