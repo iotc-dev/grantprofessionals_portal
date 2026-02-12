@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase/browser";
 
-export default function StaffLogin() {
+export default function AdminLogin() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,20 +18,20 @@ export default function StaffLogin() {
     setError("");
     setLoading(true);
 
-    // TODO: Replace with Supabase Auth
-    // const { error } = await supabase.auth.signInWithPassword({ email, password });
-    // if (error) { setError(error.message); setLoading(false); return; }
-    // router.push("/admin-dashboard");
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    // Temporary: simulate login
-    setTimeout(() => {
-      if (email && password) {
-        window.location.href = "/admin-dashboard";
-      } else {
-        setError("Please enter your email and password.");
-        setLoading(false);
-      }
-    }, 1000);
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Successful login — redirect to admin dashboard
+    router.push("/admin-dashboard");
+    router.refresh();
   };
 
   return (

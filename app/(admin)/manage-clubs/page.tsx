@@ -1,5 +1,10 @@
+// app/(admin)/manage-clubs/page.tsx
+// Server-side search, filter, sort, pagination via /api/clubs
+
 "use client";
 
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlanBadge, AlertBadge, StatusBadge } from "@/components/ui/badge";
@@ -7,118 +12,9 @@ import { ClubAvatar, AECell } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/data/filter-bar";
 import { DataTable, type Column } from "@/components/data/data-table";
 import { Pagination } from "@/components/data/pagination";
+import { useClubs, type ClubRow } from "@/lib/hooks/use-clubs";
 
-interface ClubRow {
-  initials: string;
-  name: string;
-  sport: string;
-  lga: string;
-  plan: string;
-  ae: { name: string; initials: string; color: string };
-  state: string;
-  status: { type: string; text: string };
-  apps: number;
-  lastActive: string;
-  lastActiveRecent: boolean;
-}
-
-const clubs: ClubRow[] = [
-  {
-    initials: "RS", name: "Ryde Saints Junior FC", sport: "AFL", lga: "City of Ryde",
-    plan: "GRP", ae: { name: "James Chen", initials: "JC", color: "#1E88E5" },
-    state: "NSW", status: { type: "alert", text: "3 Pending" }, apps: 5,
-    lastActive: "2 hours ago", lastActiveRecent: true,
-  },
-  {
-    initials: "HN", name: "Hornsby Netball Association", sport: "Netball", lga: "Hornsby",
-    plan: "FDP", ae: { name: "Emma Wilson", initials: "EW", color: "#8E24AA" },
-    state: "NSW", status: { type: "active", text: "Active" }, apps: 5,
-    lastActive: "Yesterday", lastActiveRecent: false,
-  },
-  {
-    initials: "PC", name: "Parramatta Cricket Club", sport: "Cricket", lga: "Parramatta",
-    plan: "STP", ae: { name: "David Chen", initials: "DC", color: "#F57C00" },
-    state: "NSW", status: { type: "active", text: "Active" }, apps: 2,
-    lastActive: "3 days ago", lastActiveRecent: false,
-  },
-  {
-    initials: "MS", name: "Manly Surf Life Saving", sport: "Surf Life Saving", lga: "Northern Beaches",
-    plan: "GRP", ae: { name: "John Smith", initials: "JS", color: "#43A047" },
-    state: "NSW", status: { type: "alert", text: "1 Pending" }, apps: 4,
-    lastActive: "5 hours ago", lastActiveRecent: true,
-  },
-  {
-    initials: "BS", name: "Blacktown Soccer FC", sport: "Soccer", lga: "Blacktown",
-    plan: "GRP", ae: { name: "Sarah Jones", initials: "SJ", color: "#EC407A" },
-    state: "NSW", status: { type: "inactive", text: "Inactive" }, apps: 0,
-    lastActive: "2 weeks ago", lastActiveRecent: false,
-  },
-  {
-    initials: "PB", name: "Penrith Basketball Assoc", sport: "Basketball", lga: "Penrith",
-    plan: "FDP", ae: { name: "David Chen", initials: "DC", color: "#F57C00" },
-    state: "NSW", status: { type: "alert", text: "2 Pending" }, apps: 6,
-    lastActive: "4 hours ago", lastActiveRecent: true,
-  },
-  {
-    initials: "CB", name: "Canterbury Bulldogs JRL", sport: "Rugby League", lga: "Canterbury-Bankstown",
-    plan: "GRP", ae: { name: "James Chen", initials: "JC", color: "#1E88E5" },
-    state: "NSW", status: { type: "active", text: "Active" }, apps: 3,
-    lastActive: "1 day ago", lastActiveRecent: false,
-  },
-  {
-    initials: "CS", name: "Cronulla Seagulls AFC", sport: "AFL", lga: "Sutherland",
-    plan: "STP", ae: { name: "Emma Wilson", initials: "EW", color: "#8E24AA" },
-    state: "NSW", status: { type: "active", text: "Active" }, apps: 2,
-    lastActive: "2 days ago", lastActiveRecent: false,
-  },
-];
-
-const filterConfig = [
-  {
-    key: "ae",
-    placeholder: "Account Executive",
-    options: [
-      { label: "James Chen", value: "james-chen" },
-      { label: "John Smith", value: "john-smith" },
-      { label: "Emma Wilson", value: "emma-wilson" },
-      { label: "David Chen", value: "david-chen" },
-      { label: "Sarah Jones", value: "sarah-jones" },
-    ],
-  },
-  {
-    key: "plan",
-    placeholder: "Plan",
-    options: [
-      { label: "GRP", value: "GRP" },
-      { label: "STP", value: "STP" },
-      { label: "FDP", value: "FDP" },
-    ],
-  },
-  {
-    key: "status",
-    placeholder: "Status",
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Pending", value: "pending" },
-      { label: "Inactive", value: "inactive" },
-    ],
-  },
-  {
-    key: "state",
-    placeholder: "State",
-    options: [
-      { label: "NSW", value: "NSW" },
-      { label: "VIC", value: "VIC" },
-      { label: "QLD", value: "QLD" },
-      { label: "WA", value: "WA" },
-      { label: "SA", value: "SA" },
-      { label: "TAS", value: "TAS" },
-      { label: "ACT", value: "ACT" },
-      { label: "NT", value: "NT" },
-    ],
-  },
-];
-
+// ── Column Definitions ──
 const columns: Column<ClubRow>[] = [
   {
     key: "name",
@@ -170,48 +66,150 @@ const columns: Column<ClubRow>[] = [
     label: "Last Active",
     sortable: true,
     render: (club) => (
-      <span className={`text-sm ${club.lastActiveRecent ? "text-success" : "text-gray-500"}`}>
+      <span className={`text-sm ${club.lastActiveRecent ? "text-gp-blue font-medium" : "text-gray-500"}`}>
         {club.lastActive}
       </span>
     ),
   },
 ];
 
-const ExportIcon = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-);
-
-const PlusIcon = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
+// ── Page ──
 export default function ManageClubs() {
+  const {
+    clubs, total, page, perPage, totalPages,
+    loading, error, filters, setFilters, refetch,
+  } = useClubs({ perPage: 10 });
+
+  // Dynamic AE filter options — loaded once
+  const [aeOptions, setAeOptions] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/clubs/filters")
+      .then((r) => r.json())
+      .then((data) => setAeOptions(data.aes || []))
+      .catch(() => {});
+  }, []);
+
+  // Build filter config with dynamic AE list
+  const filterConfig = [
+    {
+      key: "ae",
+      placeholder: "Account Executive",
+      options: aeOptions,
+    },
+    {
+      key: "plan",
+      placeholder: "Plan",
+      options: [
+        { label: "GRP", value: "GRP" },
+        { label: "STP", value: "STP" },
+        { label: "FDP", value: "FDP" },
+      ],
+    },
+    {
+      key: "status",
+      placeholder: "Status",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+      ],
+    },
+    {
+      key: "state",
+      placeholder: "State",
+      options: [
+        { label: "NSW", value: "NSW" },
+        { label: "VIC", value: "VIC" },
+        { label: "QLD", value: "QLD" },
+        { label: "WA", value: "WA" },
+        { label: "SA", value: "SA" },
+        { label: "TAS", value: "TAS" },
+        { label: "ACT", value: "ACT" },
+        { label: "NT", value: "NT" },
+      ],
+    },
+  ];
+
+  // Debounced search
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const handleSearch = (value: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    setSearchTimeout(setTimeout(() => setFilters({ search: value }), 300));
+  };
+
+  // Sort handler
+  const handleSort = (key: string) => {
+    if (filters.sort === key) {
+      setFilters({ order: filters.order === "asc" ? "desc" : "asc" });
+    } else {
+      setFilters({ sort: key, order: "asc" });
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader
-        title="All Clubs"
-        actions={
-          <>
-            <Button icon={ExportIcon} className="flex-1 sm:flex-none">Export</Button>
-            <Button variant="primary" icon={PlusIcon} className="flex-1 sm:flex-none">Add Club</Button>
-          </>
-        }
-      />
-      <FilterBar filters={filterConfig} searchPlaceholder="Search clubs..." />
-      <DataTable
-        columns={columns}
-        data={clubs}
-        rowKey={(club) => club.initials}
-        rowHref={(club) => `/manage-clubs/${club.initials.toLowerCase()}`}
-      />
-      <Pagination currentPage={1} totalPages={8} totalItems={47} itemsPerPage={6} />
-    </Card>
+    <div>
+      <Card>
+        <CardHeader
+          title="Manage Clubs"
+          subtitle={loading ? "Loading..." : `${total} clubs`}
+          actions={
+            <Button variant="primary" icon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            }>
+              Add Club
+            </Button>
+          }
+        />
+        <FilterBar
+          filters={filterConfig}
+          searchPlaceholder="Search clubs..."
+          onFilterChange={(key, value) => setFilters({ [key]: value })}
+          onSearchChange={handleSearch}
+          onClear={() => setFilters({ search: "", state: "", plan: "", status: "", ae: "" })}
+        />
+
+        {error && (
+          <div className="p-4 mx-4 mb-4 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="p-12 text-center text-gray-500">
+            <svg className="w-6 h-6 animate-spin mx-auto mb-3 text-gp-blue" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+            </svg>
+            Loading clubs...
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={clubs}
+            rowKey={(club) => club.id}
+            rowHref={(club) => `/manage-clubs/${club.id}`}
+            onSort={handleSort}
+            sortKey={filters.sort}
+            sortDir={filters.order}
+            minWidth="900px"
+          />
+        )}
+
+        {!loading && totalPages > 0 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={perPage}
+            onPageChange={(p) => setFilters({ page: p })}
+          />
+        )}
+      </Card>
+    </div>
   );
 }

@@ -1,14 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function ClubLogin() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [abn, setAbn] = useState("");
   const [passcode, setPasscode] = useState("");
   const [showPasscode, setShowPasscode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Handle magic link: ?code=F7A2B8C1
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      handleMagicLink(code);
+    }
+  }, [searchParams]);
+
+  const handleMagicLink = async (code: string) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/club-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Invalid access code.");
+        setLoading(false);
+        // Remove code from URL
+        router.replace("/club-login");
+        return;
+      }
+
+      router.push(data.redirect);
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
 
   // Format ABN as user types: XX XXX XXX XXX
   const formatAbn = (value: string) => {
@@ -27,7 +67,6 @@ export default function ClubLogin() {
     e.preventDefault();
     setError("");
 
-    // Validate ABN is 11 digits
     const abnDigits = abn.replace(/\D/g, "");
     if (abnDigits.length !== 11) {
       setError("Please enter a valid 11-digit ABN.");
@@ -41,22 +80,27 @@ export default function ClubLogin() {
 
     setLoading(true);
 
-    // TODO: Replace with Supabase custom auth
-    // 1. Look up club by ABN
-    // 2. Verify passcode with HMAC-SHA256
-    // 3. Create session
-    // 4. Check if onboarding complete → redirect accordingly
+    try {
+      const res = await fetch("/api/auth/club-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ abn: abnDigits, passcode }),
+      });
 
-    // Temporary: simulate login
-    setTimeout(() => {
-      // Simulate: check if club has completed onboarding
-      const isNewClub = false; // Toggle for testing
-      if (isNewClub) {
-        window.location.href = "/onboarding";
-      } else {
-        window.location.href = "/club-dashboard";
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed.");
+        setLoading(false);
+        return;
       }
-    }, 1000);
+
+      router.push(data.redirect);
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,33 +189,20 @@ export default function ClubLogin() {
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" /></svg>
-              Verifying...
+              Signing in...
             </span>
           ) : (
-            "Access Club Portal"
+            "Sign In"
           )}
         </button>
       </form>
 
-      {/* Help text */}
-      <div className="mt-6 p-4 bg-gp-blue-light rounded-lg">
-        <div className="flex items-start gap-3">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gp-blue shrink-0 mt-0.5">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <div className="text-sm text-gp-blue-dark">
-            <strong>Need help?</strong> Contact your Grant Professional account executive for your ABN and passcode. If you&apos;re new to Grant Professionals, visit{" "}
-            <a href="https://grantprofessionals.com.au" target="_blank" className="font-medium underline">grantprofessionals.com.au</a>
-          </div>
-        </div>
-      </div>
-
       {/* Footer */}
       <div className="mt-6 pt-6 border-t border-gray-200 text-center">
         <p className="text-sm text-gray-500">
-          Staff member?{" "}
+          Grant Professionals admin?{" "}
           <Link href="/admin-login" className="text-gp-blue font-medium no-underline hover:underline">
-            Staff Login →
+            Admin Login →
           </Link>
         </p>
       </div>
