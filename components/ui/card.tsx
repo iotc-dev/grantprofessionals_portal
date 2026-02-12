@@ -21,14 +21,21 @@ export function Card({
 
 export function CardHeader({
   title,
+  subtitle,
   actions,
 }: {
   title: string;
+  subtitle?: string;
   actions?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-6 py-4 md:py-5 border-b border-gray-200 gap-3">
-      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      <div>
+        <h2 className="text-base font-bold text-gray-900">{title}</h2>
+        {subtitle && (
+          <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
+        )}
+      </div>
       {actions && (
         <div className="flex gap-3 w-full sm:w-auto">{actions}</div>
       )}
